@@ -504,7 +504,7 @@ QDF_STATUS qdf_wake_lock_timeout_acquire(qdf_wake_lock_t *lock,
 
 QDF_STATUS qdf_wake_lock_release(qdf_wake_lock_t *lock, uint32_t reason);
 
-void qdf_wake_lock_destroy(qdf_wake_lock_t *lock);
+QDF_STATUS qdf_wake_lock_destroy(qdf_wake_lock_t *lock);
 
 void qdf_pm_system_wakeup(void);
 
