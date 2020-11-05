@@ -5714,7 +5714,7 @@ static int qpnp_qg_probe(struct platform_device *pdev)
 	chip->max_verify_psy = power_supply_get_by_name("batt_verify");
 #endif
 
-	chip->qg_version = (u8)of_device_get_match_data(&pdev->dev);
+	chip->qg_version = (enum qg_version)of_device_get_match_data(&pdev->dev);
 
 	switch (chip->qg_version) {
 	case QG_LITE:
