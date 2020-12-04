@@ -10,8 +10,11 @@
 #include <linux/msm-bus.h>
 #include <linux/pm_qos.h>
 #include <net/cnss2.h>
+#if IS_ENABLED(CONFIG_QCOM_MEMORY_DUMP_V2)
 #include <soc/qcom/memory_dump.h>
-#if defined(CONFIG_MSM_SUBSYSTEM_RESTART) || defined(CONFIG_SUBSYSTEM_RAMDUMP)
+#endif
+#if IS_ENABLED(CONFIG_MSM_SUBSYSTEM_RESTART) || \
+	IS_ENABLED(CONFIG_SUBSYSTEM_RAMDUMP)
 #include <soc/qcom/ramdump.h>
 #endif
 #ifdef CONFIG_MSM_SUBSYSTEM_RESTART
@@ -104,7 +107,9 @@ struct cnss_ramdump_info {
 	unsigned long ramdump_size;
 	void *ramdump_va;
 	phys_addr_t ramdump_pa;
+#if IS_ENABLED(CONFIG_QCOM_MEMORY_DUMP_V2)
 	struct msm_dump_data dump_data;
+#endif
 };
 
 struct cnss_dump_seg {
