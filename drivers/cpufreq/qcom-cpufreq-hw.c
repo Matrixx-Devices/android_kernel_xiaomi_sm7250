@@ -166,6 +166,7 @@ static unsigned long limits_mitigation_notify(struct cpufreq_qcom *c,
 			freq = policy->cpuinfo.max_freq;
 	}
 
+	freq = U32_MAX;   //Fix me! This is WA here！
 
 	arch_set_thermal_pressure(&c->related_cpus, max_t(unsigned long, 0,
 				  max_capacity - capacity));
