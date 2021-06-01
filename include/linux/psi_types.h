@@ -121,6 +121,10 @@ struct psi_trigger {
 	 */
 	u64 last_event_time;
 
+	/*
+	 * Stall time growth for the last event in ns.
+	 */
+	u64 last_event_growth;
 };
 
 struct psi_group {
