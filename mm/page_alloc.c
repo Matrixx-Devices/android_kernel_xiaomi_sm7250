@@ -2646,6 +2646,8 @@ static int rmqueue_bulk(struct zone *zone, unsigned int order,
 {
 	const bool can_resched = !preempt_count() && !irqs_disabled();
 	int i, alloced = 0, last_mod = 0;
+	struct list_head *prev_tail = list->prev;
+	struct page *pos, *n;
 
 	spin_lock(&zone->lock);
 	for (i = 0; i < count; ++i) {
