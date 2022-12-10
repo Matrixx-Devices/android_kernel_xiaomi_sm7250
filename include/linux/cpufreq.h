@@ -935,9 +935,6 @@ static inline bool policy_has_boost_freq(struct cpufreq_policy *policy)
 #if defined(CONFIG_ENERGY_MODEL) && defined(CONFIG_CPU_FREQ_GOV_SCHEDUTIL)
 void sched_cpufreq_governor_change(struct cpufreq_policy *policy,
 			struct cpufreq_governor *old_gov);
-#elif defined(CONFIG_ENERGY_MODEL) && defined(CONFIG_CPU_FREQ_DEFAULT_GOV_INTELLIMM)
-void sched_cpufreq_governor_change(struct cpufreq_policy *policy,
-                        struct cpufreq_governor *old_gov);
 #else
 static inline void sched_cpufreq_governor_change(struct cpufreq_policy *policy,
 			struct cpufreq_governor *old_gov) { }
