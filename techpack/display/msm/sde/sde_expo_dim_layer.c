@@ -94,7 +94,7 @@ uint32_t expo_map_dim_level(uint32_t level, struct dsi_display *display)
 	}
 
 	brightness = level / BACKLIGHT_DIM_SCALE;
-	dim_brightness = brightness > U8_MAX ? U8_MAX : brightness;
+	dim_brightness = brightness > U16_MAX ? U16_MAX : brightness;
 
 	set_dim_layer_exposure(dim_brightness, display);
 
