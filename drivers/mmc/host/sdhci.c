@@ -2023,7 +2023,6 @@ EXPORT_SYMBOL_GPL(sdhci_set_bus_width);
 
 	ctrl_2 = sdhci_readw(host, SDHCI_HOST_CONTROL2);
 	/* Select Bus Speed Mode for host */
-//*	ctrl_2 &= ~SDHCI_CTRL_UHS_MASK;
 	if ((timing == MMC_TIMING_MMC_HS200) ||
 	    (timing == MMC_TIMING_UHS_SDR104))
 		ctrl_2 |= SDHCI_CTRL_UHS_SDR104;
@@ -2038,11 +2037,9 @@ EXPORT_SYMBOL_GPL(sdhci_set_bus_width);
 		ctrl_2 |= SDHCI_CTRL_UHS_DDR50;
 	else if (timing == MMC_TIMING_MMC_HS400)
 		ctrl_2 |= SDHCI_CTRL_HS400; /* Non-standard */
-//*	sdhci_writew(host, ctrl_2, SDHCI_HOST_CONTROL2);
 }
 EXPORT_SYMBOL_GPL(sdhci_set_uhs_signaling); *//
 
-//* <<<<<<< HEAD
 void sdhci_cfg_irq(struct sdhci_host *host, bool enable, bool sync)
 {
 	if (enable && !(host->flags & SDHCI_HOST_IRQ_STATUS)) {
@@ -2056,8 +2053,8 @@ void sdhci_cfg_irq(struct sdhci_host *host, bool enable, bool sync)
 		host->flags &= ~SDHCI_HOST_IRQ_STATUS;
 	}
 }
-EXPORT_SYMBOL(sdhci_cfg_irq); *//
-// =======
+EXPORT_SYMBOL(sdhci_cfg_irq);
+
 static bool sdhci_timing_has_preset(unsigned char timing)
 {
 	switch (timing) {
@@ -2088,7 +2085,37 @@ static bool sdhci_presetable_values_change(struct sdhci_host *host, struct mmc_i
 	return !host->preset_enabled &&
 	       (sdhci_preset_needed(host, ios->timing) || host->drv_type != ios->drv_type);
 }
-// >>>>>>> 56536cb602ea (mmc: sdhci: Fix voltage switch delay)
+
+static bool sdhci_timing_has_preset(unsigned char timing)
+{
+	switch (timing) {
+	case MMC_TIMING_UHS_SDR12:
+	case MMC_TIMING_UHS_SDR25:
+	case MMC_TIMING_UHS_SDR50:
+	case MMC_TIMING_UHS_SDR104:
+	case MMC_TIMING_UHS_DDR50:
+	case MMC_TIMING_MMC_DDR52:
+		return true;
+	};
+	return false;
+}
+
+static bool sdhci_preset_needed(struct sdhci_host *host, unsigned char timing)
+{
+	return !(host->quirks2 & SDHCI_QUIRK2_PRESET_VALUE_BROKEN) &&
+	       sdhci_timing_has_preset(timing);
+}
+
+static bool sdhci_presetable_values_change(struct sdhci_host *host, struct mmc_ios *ios)
+{
+	/*
+	 * Preset Values are: Driver Strength, Clock Generator and SDCLK/RCLK
+	 * Frequency. Check if preset values need to be enabled, or the Driver
+	 * Strength needs updating. Note, clock changes are handled separately.
+	 */
+	return !host->preset_enabled &&
+	       (sdhci_preset_needed(host, ios->timing) || host->drv_type != ios->drv_type);
+}
 
 void sdhci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 {
@@ -2098,6 +2125,8 @@ void sdhci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 	bool turning_on_clk = false;
 	u8 ctrl;
 	int ret;
+
+	host->reinit_uhs = false;
 
 	host->reinit_uhs = false;
 
@@ -2116,20 +2145,14 @@ void sdhci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 		!(host->quirks2 & SDHCI_QUIRK2_PRESET_VALUE_BROKEN))
 		sdhci_enable_preset_value(host, false);
 
-//<<<<<<< HEAD
 	spin_lock_irqsave(&host->lock, flags);
 	if (host->mmc && host->mmc->card &&
 			mmc_card_sdio(host->mmc->card))
 		sdhci_cfg_irq(host, false, false);
 
-//*	if (ios->clock &&
-	    ((ios->clock != host->clock) || (ios->timing != host->timing))) {
-		spin_unlock_irqrestore(&host->lock, flags);
-======= *//
 	if (!ios->clock || ios->clock != host->clock) {
 		turning_on_clk = ios->clock && !host->clock;
 
-// >>>>>>> 56536cb602ea (mmc: sdhci: Fix voltage switch delay)
 		host->ops->set_clock(host, ios->clock);
 		spin_lock_irqsave(&host->lock, flags);
 		host->clock = ios->clock;
