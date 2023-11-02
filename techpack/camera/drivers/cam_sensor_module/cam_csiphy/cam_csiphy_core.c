@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2017-2019, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
+ * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -197,9 +197,22 @@ int32_t cam_cmd_buf_parser(struct csiphy_device *csiphy_dev,
 		return rc;
 	}
 
-	cmd_desc = (struct cam_cmd_buf_desc *)
-		((uint32_t *)&csl_packet->payload +
-		csl_packet->cmd_buf_offset / 4);
+	if (csl_packet->num_cmd_buf)
+		cmd_desc = (struct cam_cmd_buf_desc *)
+			((uint32_t *)&csl_packet->payload +
+			csl_packet->cmd_buf_offset / 4);
+	else {
+		CAM_ERR(CAM_CSIPHY, "num_cmd_buffers = %d",
+			csl_packet->num_cmd_buf);
+		rc = -EINVAL;
+		return rc;
+	}
+
+	rc = cam_packet_util_validate_cmd_desc(cmd_desc);
+	if (rc) {
+		CAM_ERR(CAM_CSIPHY, "Invalid cmd desc ret: %d", rc);
+		return rc;
+	}
 
 	rc = cam_mem_get_cpu_buf(cmd_desc->mem_handle,
 		&generic_ptr, &len);
@@ -242,8 +255,47 @@ int32_t cam_cmd_buf_parser(struct csiphy_device *csiphy_dev,
 
 	if (cam_cmd_csiphy_info->secure_mode == 1)
 		cam_csiphy_update_secure_info(csiphy_dev,
-			cam_cmd_csiphy_info, cfg_dev);
+			index);
 
+	csiphy_dev->config_count++;
+
+	CAM_DBG(CAM_CSIPHY,
+		"phy version:%d, phy_idx: %d",
+		csiphy_dev->hw_version,
+		csiphy_dev->soc_info.index);
+	CAM_DBG(CAM_CSIPHY,
+		"phy_idx: %d, 3phase:%d, combo mode:%d, secure mode:%d",
+		csiphy_dev->soc_info.index,
+		csiphy_dev->csiphy_info[index].csiphy_3phase,
+		csiphy_dev->combo_mode,
+		cam_cmd_csiphy_info->secure_mode);
+	CAM_DBG(CAM_CSIPHY,
+		"lane_cnt: 0x%x, lane_assign: 0x%x, lane_enable: 0x%x",
+		csiphy_dev->csiphy_info[index].lane_cnt,
+		csiphy_dev->csiphy_info[index].lane_assign,
+		csiphy_dev->csiphy_info[index].lane_enable);
+
+	CAM_DBG(CAM_CSIPHY,
+		"settle time:%llu, datarate:%llu, mipi flags: 0x%x",
+		csiphy_dev->csiphy_info[index].settle_time,
+		csiphy_dev->csiphy_info[index].data_rate,
+		csiphy_dev->csiphy_info[index].mipi_flags);
+
+	cam_mem_put_cpu_buf(cmd_desc->mem_handle);
+	cam_mem_put_cpu_buf(cfg_dev->packet_handle);
+	return rc;
+
+reset_settings:
+	csiphy_dev->csiphy_info[index].lane_cnt = 0;
+	csiphy_dev->csiphy_info[index].lane_assign = 0;
+	csiphy_dev->csiphy_info[index].lane_enable = 0;
+	csiphy_dev->csiphy_info[index].settle_time = 0;
+	csiphy_dev->csiphy_info[index].data_rate = 0;
+	csiphy_dev->csiphy_info[index].mipi_flags = 0;
+	csiphy_dev->csiphy_info[index].secure_mode = 0;
+	csiphy_dev->csiphy_info[index].hdl_data.device_hdl = -1;
+	cam_mem_put_cpu_buf(cfg_dev->packet_handle);
+	cam_mem_put_cpu_buf(cmd_desc->mem_handle);
 	return rc;
 }
 
