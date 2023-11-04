@@ -265,14 +265,12 @@ static const struct file_operations pm_qos_debug_fops = {
 	.release        = single_release,
 };
 
-static inline int pm_qos_set_value_for_cpus(struct pm_qos_request *new_req,
-					    struct pm_qos_constraints *c,
-					    unsigned long *cpus)
+static inline int pm_qos_set_value_for_cpus(struct pm_qos_constraints *c,
+					    					struct cpumask *cpus)
 {
-	struct pm_qos_request *req;
-	unsigned long new_req_cpus;
-	bool changed = false;
+	struct pm_qos_request *req = NULL;
 	int cpu;
+	s32 qos_val[NR_CPUS] = { [0 ... (NR_CPUS - 1)] = c->default_value };
 
 	/*
 	 * pm_qos_constraints can be from different classes,
@@ -322,7 +320,6 @@ static inline int pm_qos_set_value_for_cpus(struct pm_qos_request *new_req,
 int pm_qos_update_target(struct pm_qos_constraints *c, struct plist_node *node,
 			 enum pm_qos_req_action action, int value)
 {
-	struct pm_qos_request *req = container_of(node, typeof(*req), node);
 	int prev_value, curr_value, new_value;
 	struct cpumask cpus;
 	int ret;
@@ -358,7 +355,7 @@ int pm_qos_update_target(struct pm_qos_constraints *c, struct plist_node *node,
 	curr_value = pm_qos_get_value(c);
 	cpumask_clear(&cpus);
 	pm_qos_set_value(c, curr_value);
-	ret = pm_qos_set_value_for_cpus(req, c, &cpus);
+	ret = pm_qos_set_value_for_cpus(c, &cpus);
 
 	spin_unlock(&pm_qos_lock);
 
