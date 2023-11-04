@@ -324,6 +324,44 @@ void sde_encoder_uidle_enable(struct drm_encoder *drm_enc, bool enable)
 	}
 }
 
+static void _sde_encoder_pm_qos_add_request(struct drm_encoder *drm_enc,
+	struct sde_kms *sde_kms)
+{
+	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
+	struct pm_qos_request *req;
+	u32 cpu_mask;
+	u32 cpu_dma_latency;
+	int cpu;
+
+	if (!sde_kms->catalog || !sde_kms->catalog->perf.cpu_mask)
+		return;
+
+	cpu_mask = sde_kms->catalog->perf.cpu_mask;
+	cpu_dma_latency = sde_kms->catalog->perf.cpu_dma_latency;
+
+	req = &sde_enc->pm_qos_cpu_req;
+	req->type = PM_QOS_REQ_AFFINE_CORES;
+	cpumask_empty(&req->cpus_affine);
+	for_each_possible_cpu(cpu) {
+		if ((1 << cpu) & cpu_mask)
+			cpumask_set_cpu(cpu, &req->cpus_affine);
+	}
+	pm_qos_add_request(req, PM_QOS_CPU_DMA_LATENCY, cpu_dma_latency);
+
+	SDE_EVT32_VERBOSE(DRMID(drm_enc), cpu_mask, cpu_dma_latency);
+}
+
+static void _sde_encoder_pm_qos_remove_request(struct drm_encoder *drm_enc,
+	struct sde_kms *sde_kms)
+{
+	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
+
+	if (!sde_kms->catalog || !sde_kms->catalog->perf.cpu_mask)
+		return;
+
+	pm_qos_remove_request(&sde_enc->pm_qos_cpu_req);
+}
+
 static bool _sde_encoder_is_autorefresh_enabled(
 		struct sde_encoder_virt *sde_enc)
 {

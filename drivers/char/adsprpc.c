@@ -4363,6 +4363,7 @@ static int fastrpc_internal_control(struct fastrpc_file *fl,
 {
 	int err = 0;
 	unsigned int latency;
+	cpumask_t mask;
 	struct fastrpc_apps *me = &gfa;
 	u32 len = me->silvercores.corecount, i = 0;
 
