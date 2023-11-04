@@ -141,3 +141,13 @@ kernel/configs/android-*.cfg
 
 # Tech package directories
 #techpack/
+
+# Kernel build output
+Skizo-*.zip
+arch/arm64/boot/dts/dtboimg.cfg
+arch/arm64/boot/overlay.sh
+arch/arm64/kernel/select-embedded-dt.c
+build.log
+out/
+scripts/dtc-aosp/Makefile
+scripts/ufdt/
