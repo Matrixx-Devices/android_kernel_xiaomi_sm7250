@@ -118,6 +118,10 @@ void qdf_snprintf(char *str_buffer, unsigned int size, char *str_format, ...)
 }
 qdf_export_symbol(qdf_snprintf);
 
+#define ROW_SIZE 16
+/* Buffer size = data bytes(2 hex chars plus space) + NULL */
+#define BUFFER_SIZE ((QDF_DP_TRACE_RECORD_SIZE * 3) + 1)
+
 #ifdef QDF_ENABLE_TRACING
 
 /**
@@ -153,10 +157,6 @@ void qdf_vtrace_msg(QDF_MODULE_ID module, QDF_TRACE_LEVEL level,
 }
 qdf_export_symbol(qdf_vtrace_msg);
 
-#define ROW_SIZE 16
-/* Buffer size = data bytes(2 hex chars plus space) + NULL */
-#define BUFFER_SIZE ((QDF_DP_TRACE_RECORD_SIZE * 3) + 1)
-
 static void __qdf_trace_hex_dump(QDF_MODULE_ID module, QDF_TRACE_LEVEL level,
 				 void *data, int buf_len, bool print_ascii)
 {
@@ -187,7 +187,6 @@ void qdf_trace_hex_dump(QDF_MODULE_ID module, QDF_TRACE_LEVEL level,
 	__qdf_trace_hex_dump(module, level, data, buf_len, false);
 }
 
-qdf_export_symbol(qdf_trace_hex_dump);
 
 void qdf_trace_hex_ascii_dump(QDF_MODULE_ID module, QDF_TRACE_LEVEL level,
 			      void *data, int buf_len)
@@ -195,9 +194,14 @@ void qdf_trace_hex_ascii_dump(QDF_MODULE_ID module, QDF_TRACE_LEVEL level,
 	__qdf_trace_hex_dump(module, level, data, buf_len, true);
 }
 
-qdf_export_symbol(qdf_trace_hex_ascii_dump);
-
+#else
+void qdf_trace_hex_dump(QDF_MODULE_ID module, QDF_TRACE_LEVEL level,
+			void *data, int buf_len){}
+void qdf_trace_hex_ascii_dump(QDF_MODULE_ID module, QDF_TRACE_LEVEL level,
+			      void *data, int buf_len){}
 #endif
+qdf_export_symbol(qdf_trace_hex_dump);
+qdf_export_symbol(qdf_trace_hex_ascii_dump);
 
 #ifdef TRACE_RECORD
 
