@@ -39,9 +39,16 @@ export KBUILD_COMPILER_STRING
 export KBUILD_LINKER_STRING
 
 DEVICE=$1
+TYPE=$2
+IS_KSU=""
 
 if [ "${DEVICE}" = "monet" ]; then
+if [ "${TYPE}" = "ksu" ]; then
+DEFCONFIG=monet-ksu_defconfig
+IS_KSU="-ksu"
+else
 DEFCONFIG=monet_defconfig
+fi
 fi
 
 #
@@ -53,7 +60,7 @@ DATE=$(date '+%Y%m%d-%H%M')
 # Set our directory
 OUT_DIR=out/
 
-VERSION="Skizo-${DEVICE}-${DATE}"
+VERSION="Skizo${IS_KSU}-${DEVICE}-${DATE}"
 
 # Export Zip name
 export ZIPNAME="${VERSION}.zip"
