@@ -6836,8 +6836,6 @@ static int select_idle_cpu(struct task_struct *p, struct sched_domain *sd, int t
 	cpumask_and(cpus, sched_domain_span(sd), &p->cpus_allowed);
 
 	for_each_cpu_wrap(cpu, cpus, target) {
-		if (!--nr)
-			return si_cpu;
 		if (available_idle_cpu(cpu) || sched_idle_cpu(cpu))
 			break;
 	}
@@ -6859,7 +6857,7 @@ static inline int __select_idle_sibling(struct task_struct *p, int prev,
 	struct sched_domain *sd;
 	int i, recent_used_cpu;
 
-	if (available_idle_cpu(target) sched_idle_cpu(target))
+	if (available_idle_cpu(target) && sched_idle_cpu(target))
 		return target;
 
 	/*
