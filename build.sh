@@ -33,11 +33,9 @@ export KBUILD_LINKER_STRING
 
 DEVICE=$1
 
-if [ "${DEVICE}" = "monet" ]; then
-DEFCONFIG=monet_defconfig
-else if [ "${DEVICE}" = "vangogh" ]; then
-DEFCONFIG=vangogh_defconfig
-fi
+if [[ "${DEVICE}" = "monet" ] || [ "${DEVICE}" = "vangogh" ]]; then
+DEFCONFIG=milito.config
+DEVICE=milito
 fi
 
 #
