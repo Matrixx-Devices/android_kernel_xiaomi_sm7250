@@ -21,6 +21,7 @@
 #include "step-chg-jeita.h"
 #include "storm-watch.h"
 #include "schgm-flash.h"
+extern int fpsensor;
 
 #ifdef CONFIG_FORCE_FAST_CHARGE
 #include <linux/fastchg.h>
@@ -912,7 +913,7 @@ int smblib_set_fastcharge_mode(struct smb_charger *chg, bool enable)
 	} else {
 		/* when disable fast charge mode, need set vfloat back to 4.4V */
 		vote(chg->fv_votable, NON_FFC_VFLOAT_VOTER,
-				true, NON_FFC_VFLOAT_UV);
+				true, fpsensor == 1 ? 4450000 : 4400000);
 		termi = chg->chg_term_current_thresh_hi_from_dts;
 	}
 	smb5_config_iterm(chg, termi, 0);
@@ -2409,15 +2410,13 @@ int smblib_get_prop_batt_status(struct smb_charger *chg,
 		return 0;
 	}
 
-#ifdef CONFIG_BQ2597X_CHARGE_PUMP
-	if (chg->use_bq_pump && (get_client_vote_locked(chg->usb_icl_votable,
+	if (fpsensor != 1 && chg->use_bq_pump && (get_client_vote_locked(chg->usb_icl_votable,
 					MAIN_CHG_VOTER) == MAIN_CHARGER_STOP_ICL)) {
 		val->intval = POWER_SUPPLY_STATUS_CHARGING;
 		if (chg->warm_fake_charging)
 			chg->warm_fake_charging = false;
 		return 0;
 	}
-#endif
 
 	if (is_client_vote_enabled_locked(chg->chg_disable_votable, AFTER_FFC_VOTER)) {
 		val->intval = POWER_SUPPLY_STATUS_CHARGING;
@@ -3501,7 +3500,7 @@ int smblib_dp_dm(struct smb_charger *chg, int val)
 			if (chg->pulse_cnt >= HIGH_NUM_PULSE_THR
 					 && !chg->high_vbus_detected) {
 				vote(chg->usb_icl_votable, QC_A_CP_ICL_MAX_VOTER, true,
-					HVDCP_CLASS_A_FOR_CP_UA);
+					fpsensor == 1 ? 2500000 : 2200000);
 				chg->high_vbus_detected = true;
 			}
 		}
@@ -3648,7 +3647,7 @@ int smblib_dp_dm_bq(struct smb_charger *chg, int val)
 		 * ignore them to allow maxium vbus as 11V, as charge pump do not
 		 * need the vin more than 11V, and protect the device.
 		 */
-		//if (chg->pulse_cnt > MAX_PLUSE_COUNT_ALLOWED)
+		//if (chg->pulse_cnt > (fpsensor == 1 ? 23 : 30))
 		//	return rc;
 		/*
 		 * Pre-emptively increment pulse count to enable the setting
@@ -3682,7 +3681,7 @@ int smblib_dp_dm_bq(struct smb_charger *chg, int val)
 			if (chg->pulse_cnt >= HIGH_NUM_PULSE_THR
 					 && !chg->high_vbus_detected) {
 				vote(chg->usb_icl_votable, QC_A_CP_ICL_MAX_VOTER, true,
-					HVDCP_CLASS_A_FOR_CP_UA);
+					fpsensor == 1 ? 2500000 : 2200000);
 				chg->high_vbus_detected = true;
 			}
 		}*/
@@ -7616,7 +7615,7 @@ static void smblib_raise_qc3_vbus_work(struct work_struct *work)
 	usb_present = val.intval;
 	if (usb_present) {
 		chg->raise_vbus_to_detect = true;
-		for (i = 0; i < MAX_PULSE; i++) {
+		for (i = 0; i < (fpsensor == 1 ? 30 : 38); i++) {
 			rc = smblib_dp_pulse(chg);
 			msleep(40);
 		}
@@ -7643,7 +7642,7 @@ static void smblib_raise_qc3_vbus_work(struct work_struct *work)
 		vbus_now = val.intval;
 		pr_info("vbus_now is %d\n", vbus_now);
 
-		if (vbus_now <= VOL_THR_FOR_QC_CLASS_AB) {
+		if (vbus_now <= (fpsensor == 1 ? 12500000 : 12300000)) {
 			pr_info("qc_class_a charger is detected\n");
 			chg->is_qc_class_a = true;
 			vote(chg->fcc_votable,
@@ -7659,7 +7658,7 @@ static void smblib_raise_qc3_vbus_work(struct work_struct *work)
 			pr_err("Failed to force 5V\n");
 		if (chg->is_qc_class_a) {
 			vote(chg->usb_icl_votable, SW_ICL_MAX_VOTER, true,
-					HVDCP_CLASS_A_MAX_UA);
+					fpsensor == 1 ? 2800000 : 2500000);
 #ifdef CONFIG_SMB1398_CHARGER
 			if (chg->support_ffc) {
 				if (!smblib_get_fastcharge_mode(chg))
@@ -7759,7 +7758,7 @@ static void smblib_handle_hvdcp_3p0_auth_done(struct smb_charger *chg,
 			} else {
 				if (!chg->detect_low_power_qc3_charger) {
 					vote(chg->usb_icl_votable, SW_ICL_MAX_VOTER, true,
-							HVDCP_START_CURRENT_UA);
+							fpsensor == 1 ? 1000000 : 500000);
 					schedule_delayed_work(&chg->raise_qc3_vbus_work, 0);
 					chg->detect_low_power_qc3_charger = true;
 				}
@@ -7801,7 +7800,7 @@ static void smblib_handle_hvdcp_check_timeout(struct smb_charger *chg,
 			if (!chg->raise_vbus_to_detect) {
 				if (chg->is_qc_class_a)
 					vote(chg->usb_icl_votable, SW_ICL_MAX_VOTER, true,
-							HVDCP_CLASS_A_MAX_UA);
+							fpsensor == 1 ? 2800000 : 2500000);
 				else if (chg->real_charger_type == POWER_SUPPLY_TYPE_USB_HVDCP)
 					vote(chg->usb_icl_votable, SW_ICL_MAX_VOTER, true,
 						HVDCP2_CURRENT_UA);
@@ -8606,7 +8605,7 @@ static void typec_src_removal(struct smb_charger *chg)
 	if (chg->support_ffc) {
 		if (smblib_get_fastcharge_mode(chg) == true) {
 			smblib_set_fastcharge_mode(chg, false);
-			vote(chg->fv_votable, NON_FFC_VFLOAT_VOTER, true, NON_FFC_VFLOAT_UV);
+			vote(chg->fv_votable, NON_FFC_VFLOAT_VOTER, true, fpsensor == 1 ? 4450000 : 4400000);
 			chg->last_ffc_remove_time = ktime_get();
 		}
 	}

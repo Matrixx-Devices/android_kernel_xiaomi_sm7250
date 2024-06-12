@@ -15,6 +15,7 @@
 #include <linux/pmic-voter.h>
 #include "step-chg-jeita.h"
 #include "smb5-lib.h"
+extern int fpsensor;
 
 #define STEP_CHG_VOTER		"STEP_CHG_VOTER"
 #define JEITA_VOTER		"JEITA_VOTER"
@@ -792,15 +793,6 @@ update_time:
 #define JEITA_SUSPEND_HYST_UV		50000
 #define BATT_COOL_THRESHOLD		150
 #define BATT_WARM_THRESHOLD		430
-#ifdef CONFIG_BQ2597X_CHARGE_PUMP
-#define FFC_FLOAT_VOLTAGE_FOR_PM7150_CHG	4450000
-#define FFC_FLOAT_VOLTAGE_FOR_BMS		4470000
-#define FLOAT_VOLTAGE_NORMAL			4400000
-#else
-#define FFC_FLOAT_VOLTAGE_FOR_PM7150_CHG	4480000
-#define FFC_FLOAT_VOLTAGE_FOR_BMS		4480000
-#define FLOAT_VOLTAGE_NORMAL			4450000
-#endif
 #define WARM_FLOAT_VOLTAGE			4100000
 static int handle_jeita(struct step_chg_info *chip)
 {
@@ -901,11 +893,11 @@ static int handle_jeita(struct step_chg_info *chip)
 	}
         fastcharge_mode = pval.intval;
 	if (fastcharge_mode) {
-		fv_uv = FFC_FLOAT_VOLTAGE_FOR_PM7150_CHG;
+		fv_uv = (fpsensor == 1 ? 4480000 : 4450000);
 		if (batt_soc < 95)
-			pval.intval = FFC_FLOAT_VOLTAGE_FOR_BMS;
+			pval.intval = (fpsensor == 1 ? 4480000 : 4470000);
 	} else {
-			pval.intval = FLOAT_VOLTAGE_NORMAL;
+			pval.intval = (fpsensor == 1 ? 4450000 : 4400000);
 	}
 	rc = power_supply_set_property(chip->bms_psy,
 				POWER_SUPPLY_PROP_VOLTAGE_MAX, &pval);

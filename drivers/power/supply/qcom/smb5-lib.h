@@ -165,43 +165,19 @@ enum esr_work_status {
 
 #define ADC_CHG_TERM_MASK		32767
 
+#define HIGH_NUM_PULSE_THR			12
+/* defined for distinguish qc class_a and class_b */
+#define QC_CLASS_A_CURRENT_UA           3600000
 
-#ifdef CONFIG_BQ2597X_CHARGE_PUMP
-#define VOL_THR_FOR_QC_CLASS_AB			12300000
-#define MAX_PULSE			38
-#define MAX_PLUSE_COUNT_ALLOWED			30
-#define HIGH_NUM_PULSE_THR			12
-#define HVDCP_START_CURRENT_UA			500000
-/* defined for distinguish qc class_a and class_b */
-#define QC_CLASS_A_CURRENT_UA           3600000
-#define HVDCP_CLASS_A_MAX_UA            2500000
-#define HVDCP_CLASS_A_FOR_CP_UA         2200000
-#else
-#define VOL_THR_FOR_QC_CLASS_AB			12500000
-#define MAX_PULSE			30
-#define MAX_PLUSE_COUNT_ALLOWED			23
-#define HIGH_NUM_PULSE_THR			12
-#define HVDCP_START_CURRENT_UA			1000000
-/* defined for distinguish qc class_a and class_b */
-#define QC_CLASS_A_CURRENT_UA           3600000
-#define HVDCP_CLASS_A_MAX_UA            2800000
-#define HVDCP_CLASS_A_FOR_CP_UA         2500000
 /* defined for super charger mode */
 #define SUPER_CHARGER_DELAY_MS		3000
 #define SUPER_CHARGER_COUNT		103
 #define HVDCP3p5_NORMAL_CURRENT_UA	3600000
 #define PD2_FCC_UA			3550000
 #define PD3_FCC_UA			3600000
-#endif
 
-#ifdef CONFIG_BQ2597X_CHARGE_PUMP
 /* ffc related */
 #define NON_FFC_VFLOAT_VOTER			"NON_FFC_VFLOAT_VOTER"
-#define NON_FFC_VFLOAT_UV			4400000
-#else
-#define NON_FFC_VFLOAT_VOTER			"NON_FFC_VFLOAT_VOTER"
-#define NON_FFC_VFLOAT_UV			4450000
-#endif
 
 /* thermal micros */
 #define MAX_TEMP_LEVEL		16

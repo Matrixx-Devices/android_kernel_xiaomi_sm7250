@@ -24,6 +24,7 @@
 #include "smb5-reg.h"
 #include "smb5-lib.h"
 #include "schgm-flash.h"
+extern int fpsensor;
 
 static struct smb_params smb5_pmi632_params = {
 	.fcc			= {
@@ -3186,7 +3187,7 @@ static int smb5_init_hw(struct smb5 *chip)
 	/* if support ffc, default vfloat set to 4.4V, only fast charge need override to 4.45V */
 	if (chg->support_ffc)
 		vote(chg->fv_votable, NON_FFC_VFLOAT_VOTER,
-				true, NON_FFC_VFLOAT_UV);
+				true, fpsensor == 1 ? 4450000 : 4400000);
 
 	/* Some h/w limit maximum supported ICL */
 	vote(chg->usb_icl_votable, HW_LIMIT_VOTER,

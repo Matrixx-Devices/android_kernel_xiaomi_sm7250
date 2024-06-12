@@ -37,6 +37,7 @@
 #include "qg-soc.h"
 #include "qg-battery-profile.h"
 #include "qg-defs.h"
+extern int fpsensor;
 
 static int qg_debug_mask = 0;
 
@@ -1689,7 +1690,6 @@ static int qg_store_learned_capacity(void *data, int64_t learned_cap_uah)
 	return 0;
 }
 
-#ifndef CONFIG_BATT_VERIFY_BY_DS28E16
 static int qg_get_batt_age_level(void *data, u32 *batt_age_level)
 {
 	struct qpnp_qg *chip = data;
@@ -1710,7 +1710,6 @@ static int qg_get_batt_age_level(void *data, u32 *batt_age_level)
 
 	return 0;
 }
-#endif
 
 static int qg_store_batt_age_level(void *data, u32 batt_age_level)
 {
@@ -3596,93 +3595,87 @@ static int qg_load_battery_profile(struct qpnp_qg *chip)
 {
 	struct device_node *node = chip->dev->of_node;
 	struct device_node *profile_node;
-#ifdef CONFIG_BATT_VERIFY_BY_DS28E16
-	int rc, tuple_len, len, i;
-#else
 	int rc, tuple_len, len, i, avail_age_level = 0;
-#endif
-#ifdef CONFIG_BATT_VERIFY_BY_DS28E16
 	union power_supply_propval pval = {0, };
-	profile_node = ERR_PTR(-ENXIO);
-	if (chip->max_verify_psy == NULL)
-		chip->max_verify_psy = power_supply_get_by_name("batt_verify");
-#endif
-
+	if (fpsensor != 1) {
+		profile_node = ERR_PTR(-ENXIO);
+		if (chip->max_verify_psy == NULL)
+			chip->max_verify_psy = power_supply_get_by_name("batt_verify");
+	}
 	chip->batt_node = of_find_node_by_name(node, "qcom,battery-data");
 	if (!chip->batt_node) {
 		pr_err("Batterydata not available\n");
 		return -ENXIO;
 	}
 
-#ifdef CONFIG_BATT_VERIFY_BY_DS28E16
-	if (chip->max_verify_psy != NULL) {
-		rc = power_supply_get_property(chip->max_verify_psy,
-					POWER_SUPPLY_PROP_CHIP_OK, &pval);
-		if (rc < 0) {
-			pr_err("qg_load_battery_profile : get romid error.\n");
-		}
-	}
-
-	// the battery is xiaomi's batt; FC code, custom id
-	if (pval.intval == true) {
-		rc = power_supply_get_property(chip->max_verify_psy,
-					POWER_SUPPLY_PROP_PAGE0_DATA, &pval);
-		if (rc < 0) {
-			pr_err("qg_load_battery_profile : get page0 error.\n");
-		} else {
-			if ((pval.arrayval[0] == 'S') || (pval.arrayval[0] == 'X')) {
-				profile_node = of_batterydata_get_best_profile(chip->batt_node,
-					chip->batt_id_ohm / 1000, "G7ASIBM4P_4500mah");
-				chip->profile_judge_done = true;
-			} else if ((pval.arrayval[0] == 'N') || (pval.arrayval[0] == 'A')) {
-				profile_node = of_batterydata_get_best_profile(chip->batt_node,
-					chip->batt_id_ohm / 1000, "G7ANVTBM4P_4500mah");
-				chip->profile_judge_done = true;
-			}
-		}
-	}
-
-	if (chip->profile_judge_done == false) {
-		if (chip->profile_loaded == false) {
-			profile_node = of_batterydata_get_best_profile(chip->batt_node,
-					chip->batt_id_ohm / 1000, "Nonstandard");
-		} else {
-			return 0;
-		}
-	}
-#else
-
-	if (chip->dt.multi_profile_load) {
-		if (chip->batt_age_level == -EINVAL) {
-			rc = qg_get_batt_age_level(chip, &chip->batt_age_level);
+	if (fpsensor != 1) {
+		if (chip->max_verify_psy != NULL) {
+			rc = power_supply_get_property(chip->max_verify_psy,
+						POWER_SUPPLY_PROP_CHIP_OK, &pval);
 			if (rc < 0) {
-				pr_err("error in retrieving batt age level rc=%d\n",
-									rc);
-				return rc;
+				pr_err("qg_load_battery_profile : get romid error.\n");
 			}
 		}
-		profile_node = of_batterydata_get_best_aged_profile(
-					chip->batt_node,
-					chip->batt_id_ohm / 1000,
-					chip->batt_age_level,
-					&avail_age_level);
-		if (chip->batt_age_level != avail_age_level) {
-			qg_dbg(chip, QG_DEBUG_PROFILE, "Batt_age_level %d doesn't exist, using %d\n",
-					chip->batt_age_level, avail_age_level);
-			chip->batt_age_level = avail_age_level;
+
+		// the battery is xiaomi's batt; FC code, custom id
+		if (pval.intval == true) {
+			rc = power_supply_get_property(chip->max_verify_psy,
+						POWER_SUPPLY_PROP_PAGE0_DATA, &pval);
+			if (rc < 0) {
+				pr_err("qg_load_battery_profile : get page0 error.\n");
+			} else {
+				if ((pval.arrayval[0] == 'S') || (pval.arrayval[0] == 'X')) {
+					profile_node = of_batterydata_get_best_profile(chip->batt_node,
+						chip->batt_id_ohm / 1000, "G7ASIBM4P_4500mah");
+					chip->profile_judge_done = true;
+				} else if ((pval.arrayval[0] == 'N') || (pval.arrayval[0] == 'A')) {
+					profile_node = of_batterydata_get_best_profile(chip->batt_node,
+						chip->batt_id_ohm / 1000, "G7ANVTBM4P_4500mah");
+					chip->profile_judge_done = true;
+				}
+			}
 		}
-	} else {
-		profile_node = of_batterydata_get_best_profile(chip->batt_node,
-				chip->batt_id_ohm / 1000, NULL);
-	}
 
-	if (IS_ERR(profile_node)) {
-		rc = PTR_ERR(profile_node);
-		pr_err("Failed to detect valid QG battery profile %d\n", rc);
-		return rc;
+		if (chip->profile_judge_done == false) {
+			if (chip->profile_loaded == false) {
+				profile_node = of_batterydata_get_best_profile(chip->batt_node,
+						chip->batt_id_ohm / 1000, "Nonstandard");
+			} else {
+				return 0;
+			}
+		}
 	}
-#endif
+	else {
+		if (chip->dt.multi_profile_load) {
+			if (chip->batt_age_level == -EINVAL) {
+				rc = qg_get_batt_age_level(chip, &chip->batt_age_level);
+				if (rc < 0) {
+					pr_err("error in retrieving batt age level rc=%d\n",
+										rc);
+					return rc;
+				}
+			}
+			profile_node = of_batterydata_get_best_aged_profile(
+						chip->batt_node,
+						chip->batt_id_ohm / 1000,
+						chip->batt_age_level,
+						&avail_age_level);
+			if (chip->batt_age_level != avail_age_level) {
+				qg_dbg(chip, QG_DEBUG_PROFILE, "Batt_age_level %d doesn't exist, using %d\n",
+						chip->batt_age_level, avail_age_level);
+				chip->batt_age_level = avail_age_level;
+			}
+		} else {
+			profile_node = of_batterydata_get_best_profile(chip->batt_node,
+					chip->batt_id_ohm / 1000, NULL);
+		}
 
+		if (IS_ERR(profile_node)) {
+			rc = PTR_ERR(profile_node);
+			pr_err("Failed to detect valid QG battery profile %d\n", rc);
+			return rc;
+		}
+	}
 	rc = of_property_read_string(profile_node, "qcom,battery-type",
 				&chip->bp.batt_type_str);
 	if (rc < 0) {
@@ -3690,21 +3683,22 @@ static int qg_load_battery_profile(struct qpnp_qg *chip)
 		return rc;
 	}
 
-#ifdef CONFIG_BATT_VERIFY_BY_DS28E16
-	if (chip->profile_loaded == false) {
+	if (fpsensor != 1) {
+		if (chip->profile_loaded == false) {
+			rc = qg_batterydata_init(profile_node);
+			if (rc < 0) {
+				pr_err("Failed to initialize battery-profile rc=%d\n", rc);
+				return rc;
+			}
+		}
+	}
+	else {
 		rc = qg_batterydata_init(profile_node);
 		if (rc < 0) {
 			pr_err("Failed to initialize battery-profile rc=%d\n", rc);
 			return rc;
 		}
 	}
-#else
-	rc = qg_batterydata_init(profile_node);
-	if (rc < 0) {
-		pr_err("Failed to initialize battery-profile rc=%d\n", rc);
-		return rc;
-	}
-#endif
 
 	rc = of_property_read_u32(profile_node, "qcom,max-voltage-uv",
 				&chip->bp.float_volt_uv);
