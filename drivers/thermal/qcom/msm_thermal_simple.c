@@ -49,6 +49,8 @@ static void update_online_cpu_policy(void)
 				cpufreq_update_policy(cpu);
 			if (cpumask_intersects(cpumask_of(cpu), cpu_perf_mask))
 				cpufreq_update_policy(cpu);
+			if (cpumask_intersects(cpumask_of(cpu), cpu_prime_mask))
+				cpufreq_update_policy(cpu);
 		}
 	}
 	put_online_cpus();
@@ -199,6 +201,10 @@ static int msm_thermal_simple_parse_dt(struct platform_device *pdev,
 			goto free_zones;
 
 		ret = OF_READ_U32(child, "qcom,gold-khz", zone->gold_khz);
+		if (ret)
+			goto free_zones;
+
+		ret = OF_READ_U32(child, "qcom,prime-khz", zone->gold_khz);
 		if (ret)
 			goto free_zones;
 
