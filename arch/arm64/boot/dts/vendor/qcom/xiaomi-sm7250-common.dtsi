@@ -24,6 +24,88 @@
 #include "dsi-panel-j9-38-0a-0a-fhd-video.dtsi"
 #include "lito-thermal-overlay.dtsi"
 
+// Simple MSM Thermal Solution for Xiaomi SM7250
+&soc {
+	qcom,msm-thermal-simple {
+		compatible = "qcom,msm-thermal-simple";
+		qcom,poll-ms = <3000>;
+		qcom,start-delay = <5>;
+
+		zone@0 {
+			reg = <0>;
+			qcom,silver-khz = <1804800>;
+			qcom,gold-khz = <2208000>;
+			qcom,prime-khz = <2304000>;
+			qcom,trip-deg = <48000>;
+		};
+
+		zone@1 {
+			reg = <1>;
+			qcom,silver-khz = <1804800>;
+			qcom,gold-khz = <2208000>;
+			qcom,prime-khz = <2188800>;
+			qcom,trip-deg = <49000>;
+		};
+
+		zone@2 {
+			reg = <2>;
+			qcom,silver-khz = <1804800>;
+			qcom,gold-khz = <2092800>;
+			qcom,prime-khz = <2188800>;
+			qcom,trip-deg = <50000>;
+		};
+
+		zone@3 {
+			reg = <3>;
+			qcom,silver-khz = <1804800>;
+			qcom,gold-khz = <1900800>;
+			qcom,prime-khz = <1996800>;
+			qcom,trip-deg = <51000>;
+		};
+
+		zone@4 {
+			reg = <4>;
+			qcom,silver-khz = <1804800>;
+			qcom,gold-khz = <1900800>;
+			qcom,prime-khz = <1766400>;
+			qcom,trip-deg = <52000>;
+		};
+
+		zone@5 {
+			reg = <5>;
+			qcom,silver-khz = <1804800>;
+			qcom,gold-khz = <1728000>;
+			qcom,prime-khz = <1766400>;
+			qcom,trip-deg = <53000>;
+		};
+
+		zone@6 {
+			reg = <6>;
+			qcom,silver-khz = <1651200>;
+			qcom,gold-khz = <1478400>;
+			qcom,prime-khz = <1401600>;
+			qcom,trip-deg = <55000>;
+		};
+
+		zone@7 {
+			reg = <7>;
+			qcom,silver-khz = <1516800>;
+			qcom,gold-khz = <1478400>;
+			qcom,prime-khz = <1094400>;
+			qcom,trip-deg = <57000>;
+		};
+
+
+		zone@8 {
+			reg = <8>;
+			qcom,silver-khz = <1075200>;
+			qcom,gold-khz = <1478400>;
+			qcom,prime-khz = <806400>;
+			qcom,trip-deg = <62000>;
+		};
+	};
+};
+
 &soc {
 	gpio_keys {
 		compatible = "gpio-keys";
